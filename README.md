@@ -8,23 +8,24 @@ A Windows cleaning tool
 
 * [@remusrigo](https://github.com/RemusRigo)
 * [@remusrigo](https://sourceforge.net/u/remusrigo/profile)
-* 
+
+
 
 ## Installation
 
-You must install .NET Runtime 9 x64 and then just run SysPurge.exe
-
+* You must install .NET Runtime 10 x64 and then just run SysPurge.exe
+* Tested on:
+  * Windows 10 x64
 
 
 ## Roadmap
 
-2025-11-24: Project started (from zero)
-
-2013-03-14: Add: Background Worker
-
-2013-03-13: Project started
-
-2012-04-21: Project started
-
-## 
-
+* 2026-06-10: Add: Updated Messages constants
+* 2026-06-10: Add: Create ListView groups and items at run-time
+* 2026-06-10: New: Project started from scratch / Based on the Delphi version
+* 2025-11-24: New: Project started from scratch
+* 2013-03-14: Add: Background Worker
+* 2013-03-13: Add: Delete all files in a folder
+* 2012-04-21: Add: Clean Registry RunMRU
+* 2012-04-21: Add: Background Worker
+* 2012-04-21: Project started
