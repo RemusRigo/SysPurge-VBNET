@@ -1,4 +1,10 @@
-﻿Imports System.Configuration
+﻿'--------------------------------------------------------------------------------------------------
+' SysPurge: Main form
+'    © 2026 Remus Rigo
+'       v1.0.2026-06-12
+'--------------------------------------------------------------------------------------------------
+
+Imports System.Configuration
 Imports System.IO
 Imports System.Text.RegularExpressions
 Imports System.Windows.Forms.VisualStyles.VisualStyleElement
@@ -8,6 +14,8 @@ Public Class frmSysPurge
 
    Dim grp As ListViewGroup = Nothing
 
+   '-----------------------------------------------------------------------------------------------
+   ' ResizeColumns: Adjusts the width of the ListView columns
    Public Sub ResizeColumns()
       Dim w As Integer
 
@@ -23,6 +31,8 @@ Public Class frmSysPurge
       lvSysPurge.Columns(2).Width = lvSysPurge.ClientSize.Width - w - GetSystemMetrics(SM_CXVSCROLL)
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' FormatBytes: Converts a byte count into a human-readable string with appropriate units
    Private Function FormatBytes(b As Long) As String
       If b >= 1073741824L Then
          Return String.Format("{0:F2} GB", b / 1073741824.0R)
@@ -35,11 +45,15 @@ Public Class frmSysPurge
       End If
    End Function
 
+   '-----------------------------------------------------------------------------------------------
+   ' Add ListView Group
    Private Sub LV_AddGroup(name As String)
       grp = New ListViewGroup(name)
       lvSysPurge.Groups.Add(grp)
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Add ListView item
    Private Sub LV_AddItem(name As String)
       Dim item As New ListViewItem(name)
       item.SubItems.Add("")
@@ -49,6 +63,8 @@ Public Class frmSysPurge
       lvSysPurge.Items.Add(item)
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Build Options
    Public Sub BuildOptions()
       lvSysPurge.BeginUpdate()
       lvSysPurge.Items.Clear()
@@ -71,6 +87,8 @@ Public Class frmSysPurge
       lvSysPurge.EndUpdate()
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Process Actions
    Private Sub ProcessActions(itemsToProcess As List(Of ListViewItem))
       For Each item As ListViewItem In itemsToProcess
          Dim grp = item.Group
@@ -81,32 +99,45 @@ Public Class frmSysPurge
                Select Case item.Text
                   Case "EventViewer logs"
                      '
+
                   Case "Log files (inside Windows)"
                      '
+
                   Case "Log files (System drive)"
                      '
+
                   Case "Prefetch files"
-                     '
+                     TaskCleanFolder(item, Path.Combine(Environment.GetEnvironmentVariable("SystemRoot"), "Prefetch"), "*.pf", False, False)
+
                   Case "Temp files (Current User)"
                      TaskCleanFolder(item, Environment.GetEnvironmentVariable("TEMP"), "*.*", True, True)
-                     'MessageBox.Show(Environment.GetEnvironmentVariable("TEMP"))
+
                   Case "Temp files (Windows)"
                      '
+
                   Case "Windows Update cache"
-                     '
+                     ' Stop services: wuauserv, bits, cryptsvc, msiserver
+                     ' delete C:\Windows\SoftwareDistribution\Download
+                     ' delete C:\Windows\SoftwareDistribution\DataStore
+                     'start services - reverse order
+
                End Select
 
             Case "Microsoft Windows Registry"
                Select Case item.Text
                   Case "MRU list: Run"
                      TaskCleanRegValues(item, Registry.CurrentUser, "Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU", False)
+
                   Case "Shared DLL's)"
                      '
+
                End Select
          End Select
       Next
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' SetTaskProgressBytes: Updates the progress bytes for a task
    Private Sub SetTaskProgressBytes(item As ListViewItem, bytes As Long, progress As Integer)
       Dim formatted = FormatBytes(bytes)
       Dim p = Math.Max(0, Math.Min(100, progress))
@@ -123,6 +154,8 @@ Public Class frmSysPurge
       lvSysPurge.Update()
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' SetTaskProgressCount: Updates the progress count for a task
    Private Sub SetTaskProgressCount(item As ListViewItem, count As Integer, progress As Integer)
       Dim formatted = String.Format("{0} entries", count)
       Dim p = Math.Max(0, Math.Min(100, progress))
@@ -139,6 +172,8 @@ Public Class frmSysPurge
       lvSysPurge.Update()
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Task: Clean Folder
    Private Sub TaskCleanFolder(item As ListViewItem, folderPath As String, mask As String, recursive As Boolean, deleteFolders As Boolean)
       Dim deletedBytes As Long = 0
       Dim lastUpdate As Integer = Environment.TickCount
@@ -196,6 +231,8 @@ Public Class frmSysPurge
       End If
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' Task: Clean Registry Values
    Private Sub TaskCleanRegValues(item As ListViewItem, root As RegistryKey, keyPath As String, includeDefault As Boolean)
       SetTaskProgressCount(item, 0, 0)
 
@@ -251,12 +288,16 @@ Public Class frmSysPurge
       End Try
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' frmSysPurge: onLoad
    Private Sub frmSysPurge_Load(sender As Object, e As EventArgs) Handles Me.Load
       BuildOptions()
 
       SendMessage(lvSysPurge.Handle, LVM_SETEXTENDEDLISTVIEWSTYLE, CType(LVS_EX_DOUBLEBUFFER, IntPtr), CType(LVS_EX_DOUBLEBUFFER, IntPtr))
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' btnTSPurge: onClick
    Private Async Sub btnTSPurge_Click(sender As Object, e As EventArgs) Handles btnTSPurge.Click
       ' 1. Gather the items to process on the UI thread
       Dim itemsToProcess As New List(Of ListViewItem)()
@@ -274,6 +315,21 @@ Public Class frmSysPurge
       End Try
    End Sub
 
+   '-----------------------------------------------------------------------------------------------
+   ' lvSysPurge: DrawColumnHeader
+   Private Sub lvSysPurge_DrawColumnHeader(sender As Object, e As DrawListViewColumnHeaderEventArgs) Handles lvSysPurge.DrawColumnHeader
+      ' draw column headers with default style
+      e.DrawDefault = True
+   End Sub
+
+   '-----------------------------------------------------------------------------------------------
+   ' lvSysPurge: DrawItem
+   Private Sub lvSysPurge_DrawItem(sender As Object, e As DrawListViewItemEventArgs) Handles lvSysPurge.DrawItem
+      ' draw items with default style (except subitem 2 which is handled in DrawSubItem)
+   End Sub
+
+   '-----------------------------------------------------------------------------------------------
+   ' lvSysPurge: DrawSubItem
    Private Sub lvSysPurge_DrawSubItem(sender As Object, e As DrawListViewSubItemEventArgs) Handles lvSysPurge.DrawSubItem
       ' column 3 (index 2)
       If e.ColumnIndex <> 2 Then
@@ -330,12 +386,4 @@ Public Class frmSysPurge
       End If
    End Sub
 
-   Private Sub lvSysPurge_DrawColumnHeader(sender As Object, e As DrawListViewColumnHeaderEventArgs) Handles lvSysPurge.DrawColumnHeader
-      ' draw column headers with default style
-      e.DrawDefault = True
-   End Sub
-
-   Private Sub lvSysPurge_DrawItem(sender As Object, e As DrawListViewItemEventArgs) Handles lvSysPurge.DrawItem
-      ' draw items with default style (except subitem 2 which is handled in DrawSubItem)
-   End Sub
 End Class

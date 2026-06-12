@@ -20,7 +20,8 @@ A Windows cleaning tool
 
 ## Roadmap
 
-* 2026-06-10: Add: Updated Messages constants
+* 2026-06-10: Add: libServices.vb
+* 2026-06-10: Add: Updated Messages.vb constants
 * 2026-06-10: Add: Create ListView groups and items at run-time
 * 2026-06-10: New: Project started from scratch / Based on the Delphi version
 * 2025-11-24: New: Project started from scratch
