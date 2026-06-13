@@ -8,6 +8,7 @@
 #
 [Uu]pload.*
 [Uu]pdate.*
+*.psd
 
 #------------------------------------------------
 # Windows ignored files

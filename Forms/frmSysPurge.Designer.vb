@@ -93,6 +93,7 @@ Partial Class frmSysPurge
       Controls.Add(StatusStrip1)
       Controls.Add(ToolStrip1)
       Controls.Add(lvSysPurge)
+      Icon = CType(resources.GetObject("$this.Icon"), Icon)
       Name = "frmSysPurge"
       Text = "SysPurge"
       ToolStrip1.ResumeLayout(False)

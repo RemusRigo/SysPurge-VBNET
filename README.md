@@ -15,11 +15,14 @@ A Windows cleaning tool
 
 * You must install .NET Runtime 10 x64 and then just run SysPurge.exe
 * Tested on:
-  * Windows 10 x64
+	* Windows 10 Ent x64
+	* Windows 11 Pro x64
 
 
 ## Roadmap
 
+* 2026-06-13: Add: New Task for clearing folders to support multiple paths
+* 2026-06-13: Add: BlueFlame.ico
 * 2026-06-10: Add: libServices.vb
 * 2026-06-10: Add: Updated Messages.vb constants
 * 2026-06-10: Add: Create ListView groups and items at run-time

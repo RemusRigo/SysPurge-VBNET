@@ -89,7 +89,7 @@ Public Class frmSysPurge
 
    '-----------------------------------------------------------------------------------------------
    ' Process Actions
-   Private Sub ProcessActions(itemsToProcess As List(Of ListViewItem))
+   Private Async Sub ProcessActions(itemsToProcess As List(Of ListViewItem))
       For Each item As ListViewItem In itemsToProcess
          Dim grp = item.Group
          If grp Is Nothing Then Continue For
@@ -113,13 +113,27 @@ Public Class frmSysPurge
                      TaskCleanFolder(item, Environment.GetEnvironmentVariable("TEMP"), "*.*", True, True)
 
                   Case "Temp files (Windows)"
-                     '
+                     TaskCleanFolder(item, Path.Combine(Environment.GetEnvironmentVariable("SystemRoot"), "Temp"), "*.*", True, True)
 
                   Case "Windows Update cache"
                      ' Stop services: wuauserv, bits, cryptsvc, msiserver
                      ' delete C:\Windows\SoftwareDistribution\Download
                      ' delete C:\Windows\SoftwareDistribution\DataStore
                      'start services - reverse order
+                     StopService("wuauserv")
+                     StopService("bits")
+                     StopService("cryptsvc")
+                     StopService("msiserver")
+                     Dim pathsToClean As String() = {
+                        Path.Combine(Environment.GetEnvironmentVariable("SystemRoot"), "SoftwareDistribution\Download"),
+                        Path.Combine(Environment.GetEnvironmentVariable("SystemRoot"), "SoftwareDistribution\DataStore")
+                     }
+                     TaskCleanFolders(item, pathsToClean, "*.*", True, True)
+                     Await Task.Delay(5000)
+                     StartService("msiserver")
+                     StartService("cryptsvc")
+                     StartService("bits")
+                     StartService("wuauserv")
 
                End Select
 
@@ -229,6 +243,65 @@ Public Class frmSysPurge
             End Try
          Next
       End If
+   End Sub
+
+   '-----------------------------------------------------------------------------------------------
+   ' Task: Clean Folder
+   Private Sub TaskCleanFolders(item As ListViewItem, folderPaths As IEnumerable(Of String), mask As String, recursive As Boolean, deleteFolders As Boolean)
+      Dim totalDeletedBytes As Long = 0
+      Dim lastUpdate As Integer = Environment.TickCount
+
+      ' Convert to list to avoid multiple enumerations
+      Dim pathsList = folderPaths.ToList()
+
+      For Each folderPath As String In pathsList
+         If Not Directory.Exists(folderPath) Then Continue For
+
+         Dim search = If(recursive, SearchOption.AllDirectories, SearchOption.TopDirectoryOnly)
+         Dim files() As String
+         Try
+            files = Directory.GetFiles(folderPath, mask, search)
+         Catch
+            Continue For
+         End Try
+
+         For i = 0 To files.Length - 1
+            Try
+               Dim fi = New FileInfo(files(i))
+               Dim size = fi.Length
+               File.Delete(files(i))
+               totalDeletedBytes += size
+            Catch
+               ' Ignore file deletion errors
+            End Try
+
+            ' Update progress periodically
+            Dim now = Environment.TickCount
+            If now - lastUpdate >= 25 Then
+               ' Calculate progress based on the current file index within the current folder
+               Dim prog = CInt((i + 1) * 100.0 / Math.Max(files.Length, 1))
+               SetTaskProgressBytes(item, totalDeletedBytes, prog)
+               lastUpdate = now
+            End If
+         Next
+
+         ' Cleanup folders if requested
+         If deleteFolders AndAlso recursive Then
+            Try
+               Dim folders() As String = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories)
+               For i = folders.Length - 1 To 0 Step -1
+                  Try
+                     Directory.Delete(folders(i), False)
+                  Catch
+                     ' Ignore folder deletion errors (e.g., folder not empty)
+                  End Try
+               Next
+            Catch
+            End Try
+         End If
+      Next
+
+      SetTaskProgressBytes(item, totalDeletedBytes, 100)
    End Sub
 
    '-----------------------------------------------------------------------------------------------
